@@ -40,7 +40,7 @@ class OcrPipeline:
 
         # Stage 2: LLM correction (optional)
         if self.use_llm and words:
-            corrected_words = correct_ocr_text(words)
+            corrected_words = correct_ocr_text(words, lang=self.lang)
             corrected_text = _words_to_text(corrected_words)
         else:
             corrected_words = list(words)

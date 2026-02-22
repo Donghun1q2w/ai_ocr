@@ -26,7 +26,7 @@ def test_pipeline_result_has_raw_and_corrected(sample_image: Image.Image):
 @patch("ai_ocr.pipeline.correct_ocr_text")
 def test_pipeline_with_llm(mock_correct, sample_image: Image.Image):
     """Test pipeline calls LLM correction when enabled."""
-    mock_correct.side_effect = lambda words: words  # pass through
+    mock_correct.side_effect = lambda words, **kwargs: words  # pass through
     pipeline = OcrPipeline(use_llm=True)
     result = pipeline.run(sample_image)
     mock_correct.assert_called_once()

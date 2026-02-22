@@ -21,16 +21,22 @@ def _get_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
-def build_correction_prompt(words: list[OcrWord]) -> str:
+def build_correction_prompt(words: list[OcrWord], lang: str = "eng") -> str:
     """Build a prompt asking the LLM to correct OCR errors."""
     word_list = ""
     for i, w in enumerate(words):
         word_list += f"  {i}: \"{w.text}\" (confidence: {w.confidence}, line: {w.line_num})\n"
 
+    lang_instruction = ""
+    if lang == "kor":
+        lang_instruction = "The text is in Korean. Apply Korean grammar and context for corrections.\n"
+    elif lang == "kor+eng":
+        lang_instruction = "The text contains both Korean and English. Apply appropriate grammar for each language.\n"
+
     return f"""You are an OCR post-processing assistant.
 Below is a list of words extracted by Tesseract OCR, with their index, confidence score, and line number.
 Some words may be misrecognized. Use context from surrounding words (especially on the same line) to correct errors.
-
+{lang_instruction}
 Words:
 {word_list}
 Respond ONLY with a JSON array of corrections. Each correction is an object with:
@@ -39,9 +45,6 @@ Respond ONLY with a JSON array of corrections. Each correction is an object with
 - "corrected": the corrected text
 
 Only include words that need correction. If all words are correct, respond with [].
-
-Example response:
-[{{"index": 0, "original": "Helo", "corrected": "Hello"}}]
 
 JSON:"""
 
@@ -74,7 +77,7 @@ def _parse_corrections(response_text: str) -> list[dict]:
     return result
 
 
-def correct_ocr_text(words: list[OcrWord]) -> list[OcrWord]:
+def correct_ocr_text(words: list[OcrWord], lang: str = "eng") -> list[OcrWord]:
     """Send OCR words to Gemini for contextual correction.
 
     Returns a new list of OcrWord with corrected text.
@@ -83,7 +86,7 @@ def correct_ocr_text(words: list[OcrWord]) -> list[OcrWord]:
     if not words:
         return []
 
-    prompt = build_correction_prompt(words)
+    prompt = build_correction_prompt(words, lang=lang)
 
     try:
         response_text = _call_gemini(prompt)
