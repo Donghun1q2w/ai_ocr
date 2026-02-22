@@ -13,8 +13,8 @@ class OcrResult:
     """Result of the OCR pipeline."""
     raw_text: str
     corrected_text: str
-    words: list
-    corrected_words: list = field(default_factory=list)
+    words: list[OcrWord] = field(default_factory=list)
+    corrected_words: list[OcrWord] = field(default_factory=list)
 
 
 class OcrPipeline:
@@ -44,7 +44,7 @@ class OcrPipeline:
             corrected_text = _words_to_text(corrected_words)
         else:
             corrected_words = list(words)
-            corrected_text = raw_text
+            corrected_text = _words_to_text(corrected_words) if corrected_words else raw_text
 
         return OcrResult(
             raw_text=raw_text,
