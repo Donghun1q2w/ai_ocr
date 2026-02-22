@@ -1,11 +1,15 @@
 import copy
 import json
+import logging
 import os
+import re
 
 from google import genai
 from google.genai import types
 
 from ai_ocr.ocr_engine import OcrWord
+
+logger = logging.getLogger(__name__)
 
 _GEMINI_MODEL = "gemini-3-flash-preview"
 
@@ -52,6 +56,8 @@ def _call_gemini(prompt: str) -> str:
             temperature=0,
         ),
     )
+    if response.text is None:
+        raise ValueError("Gemini returned empty response")
     return response.text
 
 
@@ -59,10 +65,13 @@ def _parse_corrections(response_text: str) -> list[dict]:
     """Parse the JSON corrections from Gemini's response."""
     text = response_text.strip()
     # Handle markdown code blocks
-    if text.startswith("```"):
-        lines = text.split("\n")
-        text = "\n".join(lines[1:-1])
-    return json.loads(text)
+    match = re.search(r"```(?:json)?\s*\n(.*?)```", text, re.DOTALL)
+    if match:
+        text = match.group(1)
+    result = json.loads(text)
+    if not isinstance(result, list):
+        raise ValueError(f"Expected JSON array, got {type(result).__name__}")
+    return result
 
 
 def correct_ocr_text(words: list[OcrWord]) -> list[OcrWord]:
@@ -79,8 +88,11 @@ def correct_ocr_text(words: list[OcrWord]) -> list[OcrWord]:
     try:
         response_text = _call_gemini(prompt)
         corrections = _parse_corrections(response_text)
-    except (json.JSONDecodeError, ValueError, Exception):
-        # On any error, return words unchanged
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.warning("LLM correction failed (parse): %s", e)
+        return [copy.copy(w) for w in words]
+    except Exception as e:
+        logger.warning("LLM correction failed (API): %s", e)
         return [copy.copy(w) for w in words]
 
     result = [copy.copy(w) for w in words]
