@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 
 @pytest.fixture

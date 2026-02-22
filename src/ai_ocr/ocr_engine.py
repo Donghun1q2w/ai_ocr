@@ -39,7 +39,7 @@ def extract_words_with_boxes(
         text = data["text"][i].strip()
         conf = float(data["conf"][i])
 
-        if not text or conf < min_confidence:
+        if not text or conf == -1 or conf < min_confidence:
             continue
 
         words.append(OcrWord(
