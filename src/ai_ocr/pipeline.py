@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Union
@@ -53,10 +55,15 @@ class OcrPipeline:
             corrected_words=corrected_words,
         )
 
-    def run_from_file(self, image_path: Union[str, Path]) -> OcrResult:
+    def run_from_file(self, image_path: Union[str, Path], max_file_size: int = 50 * 1024 * 1024) -> OcrResult:
         """Run OCR pipeline on an image file."""
-        image = Image.open(image_path)
-        return self.run(image)
+        image_path = Path(image_path).resolve()
+        file_size = image_path.stat().st_size
+        if file_size > max_file_size:
+            raise ValueError(f"Image file too large: {file_size} bytes (max {max_file_size})")
+        with Image.open(image_path) as image:
+            image.load()
+            return self.run(image)
 
 
 def _words_to_text(words: list) -> str:
