@@ -17,6 +17,7 @@ class OcrWord:
     confidence: float
     line_num: int
     block_num: int
+    page_num: int = 0
 
 
 def extract_text(image: Image.Image, lang: str = "eng") -> str:
@@ -28,6 +29,7 @@ def extract_words_with_boxes(
     image: Image.Image,
     lang: str = "eng",
     min_confidence: float = 0,
+    page_num: int = 0,
 ) -> list[OcrWord]:
     """Extract words with bounding box positions from an image.
 
@@ -53,6 +55,7 @@ def extract_words_with_boxes(
             confidence=conf,
             line_num=data["line_num"][i],
             block_num=data["block_num"][i],
+            page_num=page_num,
         ))
 
     return words

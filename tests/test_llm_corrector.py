@@ -65,3 +65,16 @@ def test_correct_ocr_text_handles_malformed_response(mock_gemini, sample_ocr_wor
     result = correct_ocr_text(sample_ocr_words)
     assert result[0].text == "Helo"
     assert result[1].text == "Wrld"
+
+
+@patch("ai_ocr.llm_corrector._call_gemini")
+def test_correct_ocr_text_ignores_invalid_indices(mock_gemini, sample_ocr_words):
+    mock_gemini.return_value = json.dumps([
+        {"index": -1, "original": "Helo", "corrected": "Hack"},
+        {"index": 999, "original": "Wrld", "corrected": "Hack"},
+        {"index": "zero", "original": "Test", "corrected": "Hack"},
+    ])
+    result = correct_ocr_text(sample_ocr_words)
+    assert result[0].text == "Helo"
+    assert result[1].text == "Wrld"
+    assert result[2].text == "Test"

@@ -1,1 +1,1 @@
-"""ai_ocr - Two-stage OCR with LLM correction."""
+"""ai_ocr - Searchable PDF generator: Tesseract OCR + Gemini LLM correction."""

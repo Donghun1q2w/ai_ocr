@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+from typing import Optional
 
 from google import genai
 from google.genai import types
@@ -15,12 +16,24 @@ logger = logging.getLogger(__name__)
 
 _GEMINI_MODEL = "gemini-3-flash-preview"
 
+_client: Optional[genai.Client] = None
+
 
 def _get_client() -> genai.Client:
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable is required")
-    return genai.Client(api_key=api_key)
+    global _client
+    if _client is None:
+        api_key = os.environ.get("GEMINI_API_KEY", "")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable is required")
+        _client = genai.Client(api_key=api_key)
+    return _client
+
+
+def set_api_key(api_key: str) -> None:
+    """Set the API key programmatically (e.g., from config.ini)."""
+    global _client
+    _client = None  # reset cached client
+    os.environ["GEMINI_API_KEY"] = api_key
 
 
 def build_correction_prompt(words: list[OcrWord], lang: str = "eng") -> str:
@@ -96,16 +109,20 @@ def correct_ocr_text(words: list[OcrWord], lang: str = "eng") -> list[OcrWord]:
     except (json.JSONDecodeError, ValueError) as e:
         logger.warning("LLM correction failed (parse): %s", e)
         return [copy.copy(w) for w in words]
-    except Exception as e:
+    except (ConnectionError, TimeoutError, RuntimeError, OSError) as e:
         logger.warning("LLM correction failed (API): %s", e)
         return [copy.copy(w) for w in words]
 
     result = [copy.copy(w) for w in words]
 
     for correction in corrections:
+        if not isinstance(correction, dict):
+            continue
         idx = correction.get("index")
         corrected = correction.get("corrected")
-        if idx is not None and corrected and 0 <= idx < len(result):
+        if not isinstance(idx, int) or not isinstance(corrected, str):
+            continue
+        if 0 <= idx < len(result):
             result[idx].text = corrected
 
     return result

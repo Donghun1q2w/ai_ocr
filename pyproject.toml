@@ -1,19 +1,20 @@
 [project]
 name = "ai-ocr"
-version = "0.1.0"
-description = "Two-stage OCR: Tesseract + Gemini LLM correction"
+version = "0.2.0"
+description = "Searchable PDF generator: Tesseract OCR + Gemini LLM correction + invisible text layer"
 requires-python = ">=3.9"
 dependencies = [
     "pytesseract>=0.3.10",
     "Pillow>=10.0.0",
     "google-genai>=1.0.0",
-    "python-dotenv>=1.0.0",
+    "PyMuPDF>=1.24.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "pytest-mock>=3.12.0",
+    "pyinstaller>=6.0",
 ]
 
 [project.scripts]
